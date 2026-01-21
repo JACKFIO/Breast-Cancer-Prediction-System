@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breast Cancer Prediction System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .quick-test {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .sample-btn {
+            flex: 1;
+            padding: 30px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .sample-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .sample-btn h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .sample-btn p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .input-group input {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-box.benign {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .result-box.malignant {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .result-box h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .result-item h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .result-item p {
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .feature-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .category {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .category h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .error {
+            background: #fee;
+            border: 2px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎗️ Breast Cancer Prediction System</h1>
+            <p>AI-Powered Diagnostic Tool Using Deep Learning</p>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('quick')">Quick Test</button>
+                <button class="tab" onclick="switchTab('manual')">Manual Input</button>
+                <button class="tab" onclick="switchTab('info')">Information</button>
+            </div>
+
+            <!-- Quick Test Tab -->
+            <div id="quick-tab" class="tab-content active">
+                <div class="info-box">
+                    <h3>Quick Sample Testing</h3>
+                    <p>Test the system with predefined sample data representing typical benign or malignant tumor characteristics.</p>
+                </div>
+
+                <div class="quick-test">
+                    <div class="sample-btn" onclick="testSample('benign')">
+                        <h3>✅ Test Benign Sample</h3>
+                        <p>Simulate a non-cancerous tumor prediction</p>
+                    </div>
+                    <div class="sample-btn" onclick="testSample('malignant')">
+                        <h3>⚠️ Test Malignant Sample</h3>
+                        <p>Simulate a cancerous tumor prediction</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Input Tab -->
+            <div id="manual-tab" class="tab-content">
+                <div class="info-box">
+                    <h3>Manual Feature Input</h3>
+                    <p>Enter all 30 features manually for custom prediction. Features are computed from cell nuclei characteristics in breast mass images.</p>
+                </div>
+
+                <div class="feature-categories">
+                    <div class="category">
+                        <h4>Mean Values (Features 1-10)</h4>
+                        <div class="input-grid" id="mean-inputs"></div>
+                    </div>
+                    <div class="category">
+                        <h4>Standard Error (Features 11-20)</h4>
+                        <div class="input-grid" id="se-inputs"></div>
+                    </div>
+                    <div class="category">
+                        <h4>Worst Values (Features 21-30)</h4>
+                        <div class="input-grid" id="worst-inputs"></div>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="predictManual()">Predict</button>
+            </div>
+
+            <!-- Information Tab -->
+            <div id="info-tab" class="tab-content">
+                <div class="info-box">
+                    <h3>About This System</h3>
+                    <p>This breast cancer prediction system uses a deep learning neural network trained on the Wisconsin Breast Cancer Dataset. The model analyzes 30 features extracted from digitized images of fine needle aspirate (FNA) of breast masses to predict whether a tumor is benign or malignant.</p>
+                </div>
+
+                <div class="feature-categories">
+                    <div class="category">
+                        <h4>📊 Model Architecture</h4>
+                        <p>• Deep Neural Network with 4 layers<br>
+                        • 64 → 32 → 16 → 1 neurons<br>
+                        • Dropout layers for regularization<br>
+                        • Sigmoid activation for binary classification</p>
+                    </div>
+                    <div class="category">
+                        <h4>🎯 Performance</h4>
+                        <p>• Trained on 455 samples<br>
+                        • Validated on 114 samples<br>
+                        • High accuracy on test set<br>
+                        • Binary classification (Benign/Malignant)</p>
+                    </div>
+                    <div class="category">
+                        <h4>📋 Input Features</h4>
+                        <p>• Radius, Texture, Perimeter, Area<br>
+                        • Smoothness, Compactness<br>
+                        • Concavity, Concave Points<br>
+                        • Symmetry, Fractal Dimension</p>
+                    </div>
+                    <div class="category">
+                        <h4>⚠️ Disclaimer</h4>
+                        <p>This is an educational tool for demonstration purposes only. It should NOT be used for actual medical diagnosis. Always consult healthcare professionals for medical advice.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px; color: #666;">Processing prediction...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error" id="error"></div>
+
+            <!-- Results -->
+            <div class="result-box" id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let featureNames = [];
+
+        // Feature names for the Wisconsin Breast Cancer Dataset
+        const defaultFeatures = [
+            'radius_mean', 'texture_mean', 'perimeter_mean', 'area_mean', 'smoothness_mean',
+            'compactness_mean', 'concavity_mean', 'concave_points_mean', 'symmetry_mean', 'fractal_dimension_mean',
+            'radius_se', 'texture_se', 'perimeter_se', 'area_se', 'smoothness_se',
+            'compactness_se', 'concavity_se', 'concave_points_se', 'symmetry_se', 'fractal_dimension_se',
+            'radius_worst', 'texture_worst', 'perimeter_worst', 'area_worst', 'smoothness_worst',
+            'compactness_worst', 'concavity_worst', 'concave_points_worst', 'symmetry_worst', 'fractal_dimension_worst'
+        ];
+
+        // Initialize the page
+        async function init() {
+            try {
+                const response = await fetch(`${API_URL}/features`);
+                const data = await response.json();
+                featureNames = data.features || defaultFeatures;
+            } catch (error) {
+                console.log('Using default feature names');
+                featureNames = defaultFeatures;
+            }
+            createInputFields();
+        }
+
+        function createInputFields() {
+            const meanContainer = document.getElementById('mean-inputs');
+            const seContainer = document.getElementById('se-inputs');
+            const worstContainer = document.getElementById('worst-inputs');
+
+            featureNames.forEach((name, idx) => {
+                const input = `
+                    <div class="input-group">
+                        <label>${name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</label>
+                        <input type="number" step="0.01" id="feature-${idx}" placeholder="Enter value">
+                    </div>
+                `;
+
+                if (idx < 10) meanContainer.innerHTML += input;
+                else if (idx < 20) seContainer.innerHTML += input;
+                else worstContainer.innerHTML += input;
+            });
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+
+            hideResult();
+        }
+
+        async function testSample(sampleType) {
+            showLoading();
+            hideError();
+            hideResult();
+
+            try {
+                const response = await fetch(`${API_URL}/predict-sample`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({sample_type: sampleType})
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResult(data);
+                } else {
+                    showError(data.error || 'Prediction failed');
+                }
+            } catch (error) {
+                showError('Unable to connect to the server. Make sure app.py is running.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function predictManual() {
+            const features = [];
+            let hasEmpty = false;
+
+            for (let i = 0; i < 30; i++) {
+                const value = document.getElementById(`feature-${i}`).value;
+                if (value === '') {
+                    hasEmpty = true;
+                    break;
+                }
+                features.push(parseFloat(value));
+            }
+
+            if (hasEmpty) {
+                showError('Please fill in all 30 features');
+                return;
+            }
+
+            showLoading();
+            hideError();
+            hideResult();
+
+            try {
+                const response = await fetch(`${API_URL}/predict`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({features})
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResult(data);
+                } else {
+                    showError(data.error || 'Prediction failed');
+                }
+            } catch (error) {
+                showError('Unable to connect to the server. Make sure app.py is running.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayResult(data) {
+            const resultBox = document.getElementById('result');
+            const isBenign = data.prediction === 'Benign';
+            
+            resultBox.className = `result-box show ${isBenign ? 'benign' : 'malignant'}`;
+            resultBox.innerHTML = `
+                <h2>${isBenign ? '✅' : '⚠️'} Prediction: ${data.prediction}</h2>
+                <p style="font-size: 1.1em; margin-top: 10px;">
+                    ${isBenign ? 
+                        'The model predicts this tumor is likely benign (non-cancerous).' : 
+                        'The model predicts this tumor may be malignant (cancerous).'}
+                </p>
+                <div class="result-details">
+                    <div class="result-item">
+                        <h4>Confidence</h4>
+                        <p>${(data.confidence * 100).toFixed(2)}%</p>
+                    </div>
+                    <div class="result-item">
+                        <h4>Benign Probability</h4>
+                        <p>${(data.benign_probability * 100).toFixed(2)}%</p>
+                    </div>
+                    <div class="result-item">
+                        <h4>Malignant Probability</h4>
+                        <p>${(data.malignant_probability * 100).toFixed(2)}%</p>
+                    </div>
+                </div>
+                <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.9;">
+                    ⚠️ This is for educational purposes only. Consult a healthcare professional for medical advice.
+                </p>
+            `;
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById('error');
+            errorBox.textContent = message;
+            errorBox.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('error').classList.remove('show');
+        }
+
+        function hideResult() {
+            document.getElementById('result').classList.remove('show');
+        }
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+</html>
