@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breast Cancer Prediction System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎗️ Breast Cancer Prediction System</h1>
+            <p class="subtitle">Machine Learning-Based Tumor Classification</p>
+        </header>
+
+        <div class="disclaimer">
+            <strong>⚠️ Disclaimer:</strong> This system is for educational purposes only and must not be used as a medical diagnostic tool. Please consult healthcare professionals for medical advice.
+        </div>
+
+        <div class="main-content">
+            <div class="form-section">
+                <h2>Enter Tumor Features</h2>
+                <form id="predictionForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="mean radius">
+                                Radius Mean
+                                <span class="info-icon" title="Mean of distances from center to points on the perimeter">ℹ️</span>
+                            </label>
+                            <input type="number" 
+                                   id="mean radius" 
+                                   name="mean radius" 
+                                   step="0.1" 
+                                   min="6" 
+                                   max="30" 
+                                   value="14.0" 
+                                   required>
+                            <small>Range: 6.0 - 30.0</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mean texture">
+                                Texture Mean
+                                <span class="info-icon" title="Standard deviation of gray-scale values">ℹ️</span>
+                            </label>
+                            <input type="number" 
+                                   id="mean texture" 
+                                   name="mean texture" 
+                                   step="0.1" 
+                                   min="9" 
+                                   max="40" 
+                                   value="19.0" 
+                                   required>
+                            <small>Range: 9.0 - 40.0</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mean perimeter">
+                                Perimeter Mean
+                                <span class="info-icon" title="Mean size of the core tumor">ℹ️</span>
+                            </label>
+                            <input type="number" 
+                                   id="mean perimeter" 
+                                   name="mean perimeter" 
+                                   step="0.1" 
+                                   min="40" 
+                                   max="200" 
+                                   value="92.0" 
+                                   required>
+                            <small>Range: 40.0 - 200.0</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mean area">
+                                Area Mean
+                                <span class="info-icon" title="Mean area of the tumor">ℹ️</span>
+                            </label>
+                            <input type="number" 
+                                   id="mean area" 
+                                   name="mean area" 
+                                   step="1" 
+                                   min="140" 
+                                   max="2500" 
+                                   value="654.0" 
+                                   required>
+                            <small>Range: 140.0 - 2500.0</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mean smoothness">
+                                Smoothness Mean
+                                <span class="info-icon" title="Local variation in radius lengths">ℹ️</span>
+                            </label>
+                            <input type="number" 
+                                   id="mean smoothness" 
+                                   name="mean smoothness" 
+                                   step="0.001" 
+                                   min="0.05" 
+                                   max="0.17" 
+                                   value="0.096" 
+                                   required>
+                            <small>Range: 0.05 - 0.17</small>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">
+                            🔍 Predict
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            🔄 Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <h2>Prediction Result</h2>
+                <div id="resultContent"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Model: Logistic Regression | Persistence: Joblib</p>
+            <p>Developed for Educational Purposes | Python 3.13.7</p>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+            
+            try {
+                resultContent.innerHTML = '<div class="loading">Making prediction...</div>';
+                resultSection.style.display = 'block';
+                
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultContent.innerHTML = `
+                        <div class="result-card error">
+                            <h3>❌ Error</h3>
+                            <p>${data.error}</p>
+                        </div>
+                    `;
+                } else {
+                    const isBenign = data.prediction === 'Benign';
+                    const resultClass = isBenign ? 'benign' : 'malignant';
+                    const emoji = isBenign ? '✅' : '⚠️';
+                    
+                    resultContent.innerHTML = `
+                        <div class="result-card ${resultClass}">
+                            <div class="prediction-header">
+                                <h3>${emoji} Prediction: ${data.prediction}</h3>
+                                <div class="confidence">
+                                    Confidence: ${(data.confidence * 100).toFixed(2)}%
+                                </div>
+                            </div>
+                            
+                            <div class="probability-bars">
+                                <div class="probability-item">
+                                    <label>Malignant:</label>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill malignant-bar" 
+                                             style="width: ${(data.probability_malignant * 100).toFixed(2)}%">
+                                        </div>
+                                    </div>
+                                    <span>${(data.probability_malignant * 100).toFixed(2)}%</span>
+                                </div>
+                                
+                                <div class="probability-item">
+                                    <label>Benign:</label>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill benign-bar" 
+                                             style="width: ${(data.probability_benign * 100).toFixed(2)}%">
+                                        </div>
+                                    </div>
+                                    <span>${(data.probability_benign * 100).toFixed(2)}%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="input-summary">
+                                <h4>Input Values:</h4>
+                                <ul>
+                                    ${Object.entries(data.input_values).map(([key, value]) => 
+                                        `<li><strong>${key}:</strong> ${value}</li>`
+                                    ).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+            } catch (error) {
+                resultContent.innerHTML = `
+                    <div class="result-card error">
+                        <h3>❌ Error</h3>
+                        <p>Failed to get prediction. Please try again.</p>
+                    </div>
+                `;
+            }
+        });
+        
+        document.getElementById('predictionForm').addEventListener('reset', function() {
+            document.getElementById('resultSection').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
