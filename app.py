@@ -7,14 +7,69 @@ from flask import Flask, render_template, request, jsonify
 import joblib
 import numpy as np
 import os
+import sys
 
 app = Flask(__name__)
 
-# Load the trained model, scaler, and feature names
+# Model directory
 MODEL_DIR = 'model'
-model = joblib.load(os.path.join(MODEL_DIR, 'breast_cancer_model.pkl'))
-scaler = joblib.load(os.path.join(MODEL_DIR, 'scaler.pkl'))
-feature_names = joblib.load(os.path.join(MODEL_DIR, 'feature_names.pkl'))
+
+# Check if model files exist
+def check_model_files():
+    """Check if all required model files exist"""
+    required_files = [
+        'breast_cancer_model.pkl',
+        'scaler.pkl',
+        'feature_names.pkl'
+    ]
+    
+    missing_files = []
+    for file in required_files:
+        if not os.path.exists(os.path.join(MODEL_DIR, file)):
+            missing_files.append(file)
+    
+    return missing_files
+
+# Check for model files
+missing_files = check_model_files()
+
+# If running locally and files are missing, show helpful error
+if missing_files and not os.environ.get('RENDER'):
+    print("\n" + "="*60)
+    print("ERROR: Required model files not found!")
+    print("="*60)
+    print("\nMissing files:")
+    for file in missing_files:
+        print(f"  - {MODEL_DIR}/{file}")
+    print("\n" + "-"*60)
+    print("SOLUTION: Train the model first by running:")
+    print("  python model/model_building.py")
+    print("  OR use: 1_train_model.bat (Windows) / ./1_train_model.sh (Linux/Mac)")
+    print("-"*60 + "\n")
+    sys.exit(1)
+
+# If on Render and files are missing, train the model
+if missing_files and os.environ.get('RENDER'):
+    print("\n" + "="*60)
+    print("RENDER DEPLOYMENT: Training model...")
+    print("="*60)
+    import subprocess
+    result = subprocess.run(['python', 'model/model_building.py'], capture_output=True, text=True)
+    print(result.stdout)
+    if result.returncode != 0:
+        print("ERROR during training:")
+        print(result.stderr)
+        sys.exit(1)
+
+# Load the trained model, scaler, and feature names
+try:
+    model = joblib.load(os.path.join(MODEL_DIR, 'breast_cancer_model.pkl'))
+    scaler = joblib.load(os.path.join(MODEL_DIR, 'scaler.pkl'))
+    feature_names = joblib.load(os.path.join(MODEL_DIR, 'feature_names.pkl'))
+    print("✅ Model files loaded successfully!")
+except Exception as e:
+    print(f"\n❌ Error loading model files: {e}")
+    sys.exit(1)
 
 # Feature information for the form
 FEATURE_INFO = {
@@ -111,9 +166,29 @@ def api_info():
         'disclaimer': 'This system is for educational purposes only. Not for medical diagnosis.'
     })
 
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'model_loaded': True,
+        'features_count': len(feature_names)
+    })
+
 if __name__ == '__main__':
+    print("\n" + "="*60)
+    print("🎗️  BREAST CANCER PREDICTION SYSTEM")
+    print("="*60)
+    print(f"Model: Logistic Regression")
+    print(f"Features: {len(feature_names)}")
+    print(f"Server: Flask Development Server")
+    print("="*60)
+    print("\n🌐 Starting web application...")
+    print("📍 Access the app at: http://localhost:5000")
+    print("⚠️  For educational purposes only - not for medical diagnosis\n")
+    
     # For development
     app.run(debug=True, host='0.0.0.0', port=5000)
     
-    # For production (uncomment the line below and comment the line above)
+    # For production on Render.com (uncomment and comment the line above)
     # app.run(host='0.0.0.0', port=5000)
