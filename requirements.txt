@@ -1,7 +1,6 @@
 Flask==3.0.0
 flask-cors==4.0.0
-tflite-runtime
+ai-edge-litert==2.1.0
 scikit-learn==1.4.0
 numpy==1.26.3
-gunicorn==21.2.0
-
+Werkzeug==3.0.1
